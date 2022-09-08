@@ -40,9 +40,9 @@ class TestSequenceFunctions(unittest.TestCase):
     def test_examples(self):
 
         a = """
-a woman whose friends called a prude
+a woman whose friends called a prude,
 on a lark when bathing all nude
-saw a man come along
+saw a man come along.
 and unless we are wrong
 you expected this line to be lewd
         """
