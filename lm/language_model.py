@@ -35,6 +35,15 @@ class BigramLanguageModel:
 
         self._tokenizer = tokenize_function
         self._normalizer = normalize_function
+        self.vocab = {}
+        self.vocab[kSTART] = (self._unk_cutoff+1, 0)
+        self.vocab[kEND] = (self._unk_cutoff+1, 1)
+        self.cut_counts = 2 # it will tell how many things in vocab which are unique
+
+        self.unigram = {}
+        self.unigram_slides = {}
+        self.unigram_slides['total_number_to_divide'] = 0
+        self.bigram = {}
         
         # Add your code here!
 
@@ -45,6 +54,14 @@ class BigramLanguageModel:
         """
         assert not self._vocab_final, \
             "Trying to add new words to finalized vocab"
+        if word in self.vocab.keys():
+            self.vocab[word] = (self.vocab[word][0] + 1, self.vocab[word][1])
+        else:
+            self.vocab[word] = (count, -1)
+
+        if self.vocab[word][0] > self._unk_cutoff:
+            self.vocab[word] = (self.vocab[word][0], self.cut_counts)
+            self.cut_counts += 1
 
         # Add your code here!            
 
@@ -65,7 +82,8 @@ class BigramLanguageModel:
         """
         assert self._vocab_final, \
             "Vocab must be finalized before looking up words"
-
+        if word in self.vocab:
+            return self.vocab[word][1]
         # Add your code here
         return -1
 
@@ -109,7 +127,12 @@ class BigramLanguageModel:
 
         # This initially return 0.0, ignoring the word and context.
         # Modify this code to return the correct value.
-        return 0.0
+        dict = self.bigram[context]
+        if word in dict.keys():
+            val = dict[word] / dict['total_number_to_divide']
+            return lg(val)
+
+        return kNEG_INF
 
     def laplace(self, context, word):
         """
@@ -118,7 +141,14 @@ class BigramLanguageModel:
 
         # This initially return 0.0, ignoring the word and context.
         # Modify this code to return the correct value.
-        return 0.0
+        dict = self.bigram[context]
+        if word in dict.keys():
+            val = dict[word]
+        else:
+            val = 0
+
+        ans = (1 + val) / (dict['total_number_to_divide'] + len(self.unigram_slides.keys()))
+        return lg(ans)
 
     def jelinek_mercer(self, context, word):
         """
@@ -128,7 +158,12 @@ class BigramLanguageModel:
         """
         # This initially return 0.0, ignoring the word and context.
         # Modify this code to return the correct value.
-        return 0.0
+        if word in self.bigram[context].keys():
+            binary_prob = self.bigram[context][word] / self.bigram[context]['total_number_to_divide']
+        else:
+            binary_prob = 0
+        unary_prob = self.unigram_slides[word] / self.unigram_slides['total_number_to_divide']
+        return lg(self._jm_lambda * binary_prob + (1 - self._jm_lambda) * unary_prob)
 
     def kneser_ney(self, context, word):
         """
@@ -137,7 +172,32 @@ class BigramLanguageModel:
         """
         # This initially return 0.0, ignoring the word and context.
         # Modify this code to return the correct value.
-        return 0.0
+        theta = self._kn_concentration
+        delta = self._kn_discount
+        if word in self.bigram[context].keys():
+            c_u_x = self.bigram[context][word]
+        else:
+            c_u_x = 0.0
+
+        c_u = self.bigram[context]['total_number_to_divide']
+
+        val1 = (c_u_x - delta) / (theta + c_u)
+        val2 = (theta + delta * (len(self.bigram[context])-1)) / (theta + c_u)
+
+        c_phi_x = self.unigram_slides[word]
+        c_phi = self.unigram_slides['total_number_to_divide']
+
+        val3 = (c_phi_x - delta) / (theta + c_phi)
+        val4 = (theta + delta * (len(self.unigram_slides)-1)) / (theta + c_phi)
+        val4 = val4/ (len(self.unigram_slides.keys()))
+
+        val1 = max(0, val1)
+        val2 = max(0, val2)
+        val3 = max(0, val3)
+        val4 = max(0, val4)
+
+        total = val1 + val2 * (val3 + val4)
+        return lg(total)
 
     def dirichlet(self, context, word):
         """
@@ -146,7 +206,15 @@ class BigramLanguageModel:
         """
         # This initially return 0.0, ignoring the word and context.
         # Modify this code to return the correct value.
-        return 0.0
+        cons = self._dirichlet_alpha
+        dict = self.bigram[context]
+        if word in dict.keys():
+            val = dict[word]
+        else:
+            val = 0
+
+        ans = (cons + val) / (dict['total_number_to_divide'] + ( len(self.unigram_slides.keys()) )*cons)
+        return lg(ans)
 
     def add_train(self, sentence):
         """
@@ -156,7 +224,43 @@ class BigramLanguageModel:
         # You'll need to complete this function, but here's a line of
         # code that will hopefully get you started.
         for context, word in bigrams(self.tokenize_and_censor(sentence)):
-            None
+            key = context
+            if key in self.bigram.keys():
+                key_dict = self.bigram[key]
+                if word in key_dict.keys():
+                    key_dict[word] += 1
+                else:
+                    key_dict[word] = 1
+                    # to back off since nothing was there
+                    new_key = word
+                    if new_key not in self.unigram_slides.keys():
+                        self.unigram_slides[new_key] = 1
+                    else:
+                        self.unigram_slides[new_key] += 1
+
+                    self.unigram_slides['total_number_to_divide'] += 1
+
+
+
+                self.bigram[key] = key_dict
+                self.bigram[key]['total_number_to_divide'] += 1
+
+            else:
+                self.bigram[key] = {}
+                self.bigram[key]['total_number_to_divide'] = 1
+                self.bigram[key][word] = 1
+
+                new_key = word
+                if new_key not in self.unigram_slides.keys():
+                    self.unigram_slides[new_key] = 1
+                else:
+                    self.unigram_slides[new_key] += 1
+
+                self.unigram_slides['total_number_to_divide'] += 1
+
+
+        # print(self.bigram)
+        # print(self.unigram_slides)
 
     def perplexity(self, sentence, method):
         """
@@ -241,3 +345,29 @@ if __name__ == "__main__":
         print("#".join(str(x) for x in lm.tokenize_and_censor(sent)))
         print(lm.perplexity(sent, getattr(lm, args.method)))
         sent = input()
+
+    # stats = {}
+    # sentence_count = 0
+    # for ii in nltk.corpus.treebank.sents():
+    #     sent = " ".join(ii)
+    #
+    #     indexes = "#".join(str(x) for x in lm.tokenize_and_censor(sent))
+    #     perp = lm.perplexity(sent, getattr(lm, args.method))
+    #     stats[perp] = (sent, indexes)
+    #
+    #
+    # l = list(stats.keys())
+    # l.sort()
+
+    # cnt = 0
+    # for ll in l:
+    #     # print("############################################3")
+    #     # print(ll)
+    #     print(stats[ll][0])
+    #     # print(stats[ll][1])
+    #     if cnt == 10:
+    #         break
+    #
+    #     cnt += 1
+
+

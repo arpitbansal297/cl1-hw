@@ -1,0 +1,71 @@
+I will be showing the 10 sentences with least perplexity
+
+MLE:
+
+IRAs .
+It was outrageous .
+The '82 Salon is $ 115 *U* .
+`` I would like *-1 to go back to 1970 .
+I believe in the system .
+Nekoosa would n't be a diversification .
+But the court disagreed .
+They mature 1992-1999 , 2009 and 2017 .
+Mr. Baris is a lawyer in New York .
+A Lorillard spokewoman said , `` This is an old story .
+That was the law .
+
+
+
+
+Laplace:
+
+IRAs .
+It was outrageous .
+The '82 Salon is $ 115 *U* .
+Nekoosa would n't be a diversification .
+They mature 1992-1999 , 2009 and 2017 .
+They mature in 2005 , 2009 and 2029 .
+`` I would like *-1 to go back to 1970 .
+But the court disagreed .
+Test-preparation booklets , software and worksheets are a booming publishing subindustry .
+Marie-Louise , a small-time abortionist , was their woman .
+I believe in the system .
+
+
+
+
+Dirichlet:
+
+IRAs .
+It was outrageous .
+The '82 Salon is $ 115 *U* .
+Nekoosa would n't be a diversification .
+`` I would like *-1 to go back to 1970 .
+But the court disagreed .
+I believe in the system .
+They mature 1992-1999 , 2009 and 2017 .
+He is his own man .
+A Lorillard spokewoman said , `` This is an old story .
+They mature in 2005 , 2009 and 2029 .
+
+
+
+Jelinek Mercer
+
+IRAs .
+It was outrageous .
+The '82 Salon is $ 115 *U* .
+Nekoosa would n't be a diversification .
+`` I would like *-1 to go back to 1970 .
+I believe in the system .
+But the court disagreed .
+They mature 1992-1999 , 2009 and 2017 .
+They mature in 2005 , 2009 and 2029 .
+Mr. Baris is a lawyer in New York .
+A Lorillard spokewoman said , `` This is an old story .
+
+
+Patterns:
+The least three are same for each method.
+There are a lot of overlap between the sentences which are considered to be of least perplexity by all the 4 methods
+Most of these methods produce least perplexity for sentences which have words below the cutoff threshold.
