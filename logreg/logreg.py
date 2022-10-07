@@ -10,6 +10,7 @@ kSEED = 1701
 kBIAS = "BIAS_CONSTANT"
 
 random.seed(kSEED)
+import pdb
 
 
 def sigmoid(score, threshold=20.0):
@@ -98,6 +99,10 @@ class LogReg:
         :param use_tfidf: A boolean to switch between the raw data and the tfidf representation
         :return: Return the new value of the regression coefficients
         """
+        score = np.sum(train_example.x * self.beta)
+        pi = sigmoid(score)
+        grad = (train_example.y - pi) * train_example.x
+        self.beta = self.beta + self.step(iteration) * grad
 
         return self.beta
 
@@ -158,7 +163,6 @@ if __name__ == "__main__":
 
     args = argparser.parse_args()
     train, test, vocab = read_dataset(args.positive, args.negative, args.vocab)
-
     print("Read in %i train and %i test" % (len(train), len(test)))
 
     # Initialize model
@@ -191,3 +195,50 @@ if __name__ == "__main__":
     lr.finalize_lazy(update_number)
     print("Update %i\tTP %f\tHP %f\tTA %f\tHA %f" %
           (update_number, train_lp, ho_lp, train_acc, ho_acc))
+
+    betas = lr.beta
+    betas = abs(betas)
+    arg_betas = np.argsort(betas)
+
+    liw = []
+    # print("Least important words ")
+    for i in range(20):
+        a_b = betas[arg_betas[i]]
+        b = lr.beta[arg_betas[i]]
+        word = vocab[arg_betas[i]]
+        # print(word, a_b, b)
+        liw.append(word)
+
+    pmiw = []
+    betas = lr.beta
+    arg_betas = np.argsort(betas)
+
+    # print("Most important words for ")
+    for i in range(20):
+        index = len(vocab) - 1 -i
+        a_b = betas[arg_betas[index]]
+        b = lr.beta[arg_betas[index]]
+        word = vocab[arg_betas[index]]
+        pmiw.append(word)
+
+    nmiw = []
+    betas = lr.beta
+    arg_betas = np.argsort(betas)
+
+    # print("Least important words for ")
+    for i in range(20):
+        index = i
+        a_b = betas[arg_betas[index]]
+        b = lr.beta[arg_betas[index]]
+        word = vocab[arg_betas[index]]
+        nmiw.append(word)
+
+    print("Liw")
+    print(liw)
+
+    print("Miw for Positives ")
+    print(pmiw)
+
+    print("Miw for Negatives ")
+    print(nmiw)
+

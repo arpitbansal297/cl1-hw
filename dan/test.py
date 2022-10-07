@@ -1,18 +1,15 @@
 import unittest
-from dan import DanModel, vectorize
+from dan import DanModel, QuestionDataset
 import numpy as np
 import torch
 import torch.nn as nn
 
+text1 = {'text': torch.LongTensor([[2, 3]]).view(1, 2), 'len': torch.FloatTensor([2])}
+text2 = {'text': torch.LongTensor([[1, 3, 4, 2, 1, 0]]).view(1, 6), 'len': torch.FloatTensor([5])}
 
-
-
-text1 = {'text':torch.LongTensor([[2, 3]]).view(1, 2), 'len': torch.FloatTensor([2])}
-text2 = {'text':torch.LongTensor([[1, 3, 4, 2, 1, 0]]).view(1, 6), 'len': torch.FloatTensor([5])}
-
-text3 = {'text':torch.LongTensor([[2, 3, 1], [3, 4, 0]]), 'len': torch.FloatTensor([3, 2])}
-text4 = {'text':torch.LongTensor([[1, 0, 0, 0, 0], [2, 4, 4, 3, 1], [3, 4, 1, 0, 0]]), 'len': torch.FloatTensor([1, 5, 3])}
-
+text3 = {'text': torch.LongTensor([[2, 3, 1], [3, 4, 0]]), 'len': torch.FloatTensor([3, 2])}
+text4 = {'text': torch.LongTensor([[1, 0, 0, 0, 0], [2, 4, 4, 3, 1], [3, 4, 1, 0, 0]]),
+         'len': torch.FloatTensor([1, 5, 3])}
 
 
 class TestSequenceFunctions(unittest.TestCase):
@@ -29,8 +26,6 @@ class TestSequenceFunctions(unittest.TestCase):
         nn.init.ones_(self.toy_dan_model.linear1.bias.data)
         nn.init.zeros_(self.toy_dan_model.linear2.bias.data)
 
-
-
     def test_forward(self):
         logits = self.toy_dan_model(text1['text'], text1['len'])
         print(logits[0][1])
@@ -45,9 +40,6 @@ class TestSequenceFunctions(unittest.TestCase):
         probs = self.toy_dan_model(text2['text'], text2['len'], is_prob=True)
         self.assertAlmostEqual(probs[0][0].item(), 0.5080493)
         self.assertAlmostEqual(probs[0][1].item(), 0.4919507)
-
-
-
 
     def test_minibatch(self):
         logits = self.toy_dan_model(text3['text'], text3['len'])
@@ -79,25 +71,19 @@ class TestSequenceFunctions(unittest.TestCase):
         word2ind = {'text': 0, '<unk>': 1, 'test': 2, 'is': 3, 'fun': 4, 'check': 5, 'vector': 6, 'correct': 7}
         lb = 1
         text1 = ['text', 'test', 'is', 'fun']
-        ex1 = text1, lb
-        vec_text, _ = vectorize(ex1, word2ind)
+        ex1 = text1
+        vec_text = QuestionDataset.vectorize(ex1, word2ind)
         self.assertEqual(vec_text[0], 0)
         self.assertEqual(vec_text[1], 2)
         self.assertEqual(vec_text[2], 3)
         self.assertEqual(vec_text[3], 4)
         text2 = ['check', 'vector', 'correct', 'hahaha']
-        ex2 = text2, lb
-        vec_text, _ = vectorize(ex2, word2ind)
+        ex2 = text2
+        vec_text = QuestionDataset.vectorize(ex2, word2ind)
         self.assertEqual(vec_text[0], 5)
         self.assertEqual(vec_text[1], 6)
         self.assertEqual(vec_text[2], 7)
         self.assertEqual(vec_text[3], 1)
-
-
-        
-        
-
-    
 
 
 if __name__ == '__main__':
